@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.hdtrailers_net" name="HD-Trailers.net" version="1.2.3" provider-name="Tristan Fischer (sphere@dersphere.de)">
+<addon id="plugin.video.hdtrailers_net" name="HD-Trailers.net" version="1.2.4" provider-name="idleloop, forked from Tristan Fischer (sphere@dersphere.de)">
   <requires>
     <import addon="xbmc.python" version="2.1.0"/>
     <import addon="script.module.xbmcswift2" version="2.4.0"/>
@@ -13,9 +13,9 @@
     <language></language>
     <platform>all</platform>
     <website>http://www.hd-trailers.net</website>
-    <source>https://github.com/dersphere/plugin.video.hdtrailers_net</source>
+    <source>https://github.com/idleloop-github/plugin.video.hdtrailers_net</source>
     <forum>http://forum.xbmc.org/showthread.php?tid=148400</forum>
-    <email>sphere@dersphere.de</email>
+    <email>idleloop@yahoo.com</email>
     <license>GNU GENERAL PUBLIC LICENSE. Version 2, June 1991</license>
     <summary lang="ar">مقاطع مرئيه من مصادر مختلفه بجوده عاليه الوضوح</summary>
     <summary lang="be">Trailer and Clips from several sources in HD</summary>

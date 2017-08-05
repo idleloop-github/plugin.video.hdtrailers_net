@@ -43,6 +43,8 @@ TRAKT_ADD_URL = 'plugin://plugin.video.trakt_list_manager/movies/add?title=%s'
 
 plugin = Plugin()
 
+LOCAL_ITEMS_CACHE = []
+
 
 @plugin.route('/')
 def show_root_menu():
@@ -96,37 +98,12 @@ def show_movies(source):
 
     items = []
 
-    if page is not None:
-        if page > 1:
-            previous_page = str(page - 1)
-            items.append({
-                'label': '<< %s %s <<' % (_('page'), previous_page),
-                'thumbnail': scraper.PREV_IMG,
-                'path': plugin.url_for(
-                    endpoint='show_movies',
-                    source=source,
-                    page=previous_page,
-                    update='true'
-                )
-            })
-        if has_next_page:
-            next_page = str(page + 1)
-            items.append({
-                'label': '>> %s %s >>' % (_('page'), next_page),
-                'thumbnail': scraper.NEXT_IMG,
-                'path': plugin.url_for(
-                    endpoint='show_movies',
-                    source=source,
-                    page=next_page,
-                    update='true'
-                )
-            })
-
     items.extend([{
         'label': movie['title'],
         'thumbnail': movie['thumb'],
         'info': {
             'count': i,
+            'plot': movie['plot'], # show plot
         },
         'context_menu': [(
             _('add_to_cp'),
@@ -140,6 +117,39 @@ def show_movies(source):
             movie_id=movie['id']
         ),
     } for i, movie in enumerate(movies)])
+
+    if page is not None:
+        if page > 1:
+            previous_page = str(page - 1)
+            items.append({
+                'label': '<< %s %s <<' % (_('page'), previous_page),
+                'thumbnail': scraper.PREV_IMG,
+                'path': plugin.url_for(
+                    endpoint='show_movies',
+                    source=source,
+                    page=previous_page,
+                    update='true'
+                ),
+                'info': {
+                    'count': -1, # first item
+                },
+            })
+        if has_next_page:
+            next_page = str(page + 1)
+            items.append({
+                'label': '>> %s %s >>' % (_('page'), next_page),
+                'thumbnail': scraper.NEXT_IMG,
+                'path': plugin.url_for(
+                    endpoint='show_movies',
+                    source=source,
+                    page=next_page,
+                    update='true'
+                ),
+                'info': {
+                    'count': str(len(items)), # last item
+                },                
+            })
+
     content_type = plugin.get_setting(
         'content_type', choices=('videos', 'movies')
     )
@@ -189,9 +199,11 @@ def show_videos(movie_id):
                 'label': title,
                 'thumbnail': movie['thumb'],
                 'info': {
-                    'studio': movie['title'],
+                    'title': title,
                     'tagline': video['source'],
+                    'plot': video['plot'], # show plot
                     'date': video['date'],
+                    'poster': movie['poster'],
                     'count': i,
                 },
                 'context_menu': [
@@ -208,11 +220,42 @@ def show_videos(movie_id):
                     url=url
                 ),
             })
+    # poster as image:
+    items.append({
+        'label': 'Poster',
+        'thumbnail': movie['thumb'],
+        'info': {
+            'title': 'Poster',
+            'plot': video['plot'], # show plot
+            'poster': movie['poster'],
+            'count': i+1,
+        },
+        'is_playable': True,
+        'path': plugin.url_for(
+                    endpoint='show_image',
+                    url=movie['poster'],
+        ),
+    })
+
+    LOCAL_ITEMS_CACHE = items
 
     finish_kwargs = {
         'sort_methods': ('DATE', 'TITLE', 'PLAYLIST_ORDER')
     }
     return plugin.finish(items, **finish_kwargs)
+
+
+@plugin.route('/image/<url>')
+def show_image(url):
+    log('Using URL: %s' % url)
+    # show poster: first attempt... unfortunately xbmcswift2 doesn't cope with images :-(
+    import xbmcgui
+    Window = xbmcgui.WindowDialog()
+    Image = xbmcgui.ControlImage(0,0,int(Window.getWidth()*0.67),int(Window.getHeight()*0.67), url, 2)
+    Window.addControl(Image)
+    Window.doModal()
+    Window.show()
+    return LOCAL_ITEMS_CACHE
 
 
 @plugin.route('/video/<source>/<url>')

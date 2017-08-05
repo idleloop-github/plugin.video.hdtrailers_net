@@ -31,6 +31,7 @@
     <string id="30121">Videos</string>
     <string id="30122">Movies</string>
     <string id="30123">Download-Path</string>
+    <string id="30124">Extract topics on start (slower)</string>
 
     <!-- OK Dialogs -->
     <string id="30130">No download path</string>

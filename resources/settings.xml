@@ -7,4 +7,5 @@
 	<setting id="show_clips" type="bool" label="30102" default="true"/>
 	<setting id="show_source_in_title" type="bool" label="30103" default="true"/>
 	<setting id="resolution" type="enum" label="30110" default="1" lvalues="30111|30112|30113"/>
+	<setting id="scrap_topic_in_advance" type="bool" label="30124" default="true"/>
 </settings>
