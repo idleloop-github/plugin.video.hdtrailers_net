@@ -19,6 +19,7 @@
 
 from xbmcswift2 import Plugin, xbmcgui
 from resources.lib import scraper
+import urlparse
 
 STRINGS = {
     'page': 30001,
@@ -82,7 +83,8 @@ def show_initials():
 def show_movies(source):
     page = None
     if source == 'latest':
-        page = int(plugin.request.args.get('page', ['1'])[0])
+        args = urlparse.parse_qs(sys.argv[2][1:])
+        page = int(args.get('page', ['1'])[0])
         movies, has_next_page = scraper.get_latest(page=page)
     elif source == 'most_watched':
         movies, has_next_page = scraper.get_most_watched()
