@@ -16,12 +16,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+# Modified by idleloop (2017, 2019):
+# //github.com/idleloop-github/plugin.video.hdtrailers_net
+#
 
 import json
 import urllib2
 from BeautifulSoup import BeautifulSoup
+# //kodi.wiki/index.php?title=Add-on:Parsedom_for_xbmc_plugins
+from CommonFunctions import parseDOM
 import re
 import xbmcaddon
+import xbmcgui
 
 SCRAP_TOPIC_IN_ADVANCE = False
 if (xbmcaddon.Addon(id='plugin.video.hdtrailers_net').getSetting( 'scrap_topic_in_advance') == 'true'):
@@ -31,7 +37,8 @@ URL_PROTO = 'https:'
 MAIN_URL = URL_PROTO + '//www.hd-trailers.net/'
 NEXT_IMG = URL_PROTO + '//static.hd-trailers.net/images/mobile/next.png'
 PREV_IMG = URL_PROTO + '//static.hd-trailers.net/images/mobile/prev.png'
-USER_AGENT = 'Kodi Add-on HD-Trailers.net v1.2.4'
+USER_AGENT = 'Kodi Add-on HD-Trailers.net v1.2.5'
+number_of_plots_retrieved = 0
 
 SOURCES = (
     'apple.com',
@@ -85,25 +92,35 @@ def get_initials():
 
 def get_videos(movie_id, quick=False):
     url = MAIN_URL + 'movie/%s' % movie_id
-    tree = __get_tree(url)
+    html = __get_html(url)
 
     trailers = []
     clips = []
     section = trailers
 
-    span1= tree.find('table', {'class': 'mainTopTable'})
-    span2= tree.find('span', {'class': 'topTableImage'}) # extract title and poster
+    span1 = parseDOM( html, 'table', attrs={'class': 'mainTopTable'} )
+    plot  = parseDOM( parseDOM( span1, 'p' ), 'span')[0]
+    span2 = parseDOM( html, 'span', {'class': 'topTableImage'} ) # extract title and poster
     movie = {
-        'title': span2.img['title'],
-        'thumb': URL_PROTO + span2.img['src'],
-        'poster':re.sub('\-resized', '', URL_PROTO + span2.img['src']), # show poster
-        'plot':  span1.p.span.text, # show plot
+        'title': parseDOM( span2, 'img', ret='title' )[0],
+        'thumb': URL_PROTO + parseDOM( span2, 'img', ret='src' )[0],
+        'poster':re.sub('\-resized', '', URL_PROTO + parseDOM( span2, 'img', ret='src' )[0]), # show poster
+        'plot':  plot, # show plot
     }
 
+    if SCRAP_TOPIC_IN_ADVANCE and quick:
+        global number_of_plots_retrieved
+        number_of_plots_retrieved += 1
+        dialog = xbmcgui.Dialog()
+        dialog.notification( 'hdtrailers_net',
+            'retrieving plots (' + str(number_of_plots_retrieved)  + ') ...',
+            xbmcgui.NOTIFICATION_INFO, int(1500) )
     if quick:
         return movie
 
-    table = tree.find('table', {'class': 'bottomTable'})
+    table = parseDOM( html, 'table', attrs={'class': 'bottomTable'} )[0]
+    # unfortunately parseDOM is not able to return html entities both with AND without attributes :-(
+    table = BeautifulSoup( table, convertEntities=BeautifulSoup.HTML_ENTITIES )
     for tr in table.findAll('tr'):
         if tr.find('td', text='Trailers'):
             section = trailers
@@ -130,7 +147,7 @@ def get_videos(movie_id, quick=False):
                 'title': tr.contents[3].span.string,
                 'date': __format_date(tr.contents[1].string),
                 'source': source,
-                'plot': span1.p.span.text, # show plot
+                'plot': plot, # show plot
                 'resolutions': resolutions
             })
     return movie, trailers, clips
@@ -153,17 +170,18 @@ def get_yahoo_url(vid, res):
 
 
 def _get_movies(url):
-    tree = __get_tree(url)
+    html = __get_html(url)
+    global number_of_plots_retrieved
+    number_of_plots_retrieved = 0
     movies = [{
-        'id': td.a['href'].split('/')[2],
-        'title': td.a.img['alt'],
-        'thumb': URL_PROTO + td.a.img['src'],
-        'plot': get_videos( td.a['href'].split('/')[2], quick=True )['plot'] if SCRAP_TOPIC_IN_ADVANCE else '' # show plot
-    } for td in tree.findAll('td', 'indexTableTrailerImage') if td.a.img]
-    has_next_page = tree.find(
-        'a',
-        attrs={'class': 'startLink'},
-        text=lambda text: 'Next' in text
+        'id': parseDOM( td, 'a', ret='href' )[0].split('/')[2],
+        'title': parseDOM( parseDOM( td, 'a' ), 'img', ret='alt' )[0],
+        'thumb': URL_PROTO + parseDOM( parseDOM( td, 'a' ), 'img', ret='src' )[0],
+        'plot': get_videos( parseDOM( td, 'a', ret='href' )[0].split('/')[2], quick=True )['plot'] if SCRAP_TOPIC_IN_ADVANCE else '' # show plot
+    } for td in parseDOM( html, 'td', attrs={ 'class': 'indexTableTrailerImage' } ) if parseDOM( parseDOM( td, 'a' ), 'img' )]
+    has_next_page = map(
+        lambda text: 'Next' in text,
+        parseDOM( html, 'a', attrs={'class': 'startLink'} )
     ) is not None
     return movies, has_next_page
 
@@ -180,17 +198,16 @@ def __format_date(date_str):
     return '%s.%s.%s' % (d, m, y)
 
 
-def __get_tree(url):
-    log('__get_tree opening url: %s' % url)
+def __get_html(url):
+    log('__get_html opening url: %s' % url)
     headers = {'User-Agent': USER_AGENT}
     req = urllib2.Request(url, None, headers)
     try:
         html = urllib2.urlopen(req).read()
     except urllib2.HTTPError, error:
         raise NetworkError('HTTPError: %s' % error)
-    log('__get_tree got %d bytes' % len(html))
-    tree = BeautifulSoup(html, convertEntities=BeautifulSoup.HTML_ENTITIES)
-    return tree
+    log('__get_html got %d bytes' % len(html))
+    return html
 
 
 def __get_json(url):
