@@ -6,12 +6,13 @@ Trailer and Clips from several sources in HD.
 
 ### Installation
 
-* [Download the plugin here](https://github.com/idleloop-github/plugin.video.hdtrailers_net/releases/download/v1.2.5/plugin.video.hdtrailers_net-1.2.5.zip).   
+* [Download the plugin here](https://github.com/idleloop-github/plugin.video.hdtrailers_net/releases/download/v1.2.6/plugin.video.hdtrailers_net-1.2.6.zip).   
 * Install on Kodi: Add-ons / Download / .. / Install from zip file / *and choose the zip file*   
 
 ### History of changes
 
-Forked from [dersphere](https://github.com/dersphere/plugin.video.hdtrailers_net/tree/master) and [skylex](https://github.com/skylex/plugin.video.hdtrailers_net/tree/master).   
+##### 1.2.6 (02.2019)   
+- patch for https broken at hd-trailers.net
 
 ##### 1.2.5 (01.2019)   
 - patch for Kodi 18
@@ -24,6 +25,8 @@ Forked from [dersphere](https://github.com/dersphere/plugin.video.hdtrailers_net
 - added poster to trailers list
 - "next" icon moved last in the list
 
+Forked from [dersphere](https://github.com/dersphere/plugin.video.hdtrailers_net/tree/master) and [skylex](https://github.com/skylex/plugin.video.hdtrailers_net/tree/master).   
+
 ### License
 
-GPL v3
+[GPL v3](https://github.com/idleloop-github/plugin.video.hdtrailers_net/blob/master/LICENSE.txt)

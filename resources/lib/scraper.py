@@ -33,10 +33,6 @@ SCRAP_TOPIC_IN_ADVANCE = False
 if (xbmcaddon.Addon(id='plugin.video.hdtrailers_net').getSetting( 'scrap_topic_in_advance') == 'true'):
         SCRAP_TOPIC_IN_ADVANCE=True
 
-URL_PROTO = 'https:'
-MAIN_URL = URL_PROTO + '//www.hd-trailers.net/'
-NEXT_IMG = URL_PROTO + '//static.hd-trailers.net/images/mobile/next.png'
-PREV_IMG = URL_PROTO + '//static.hd-trailers.net/images/mobile/prev.png'
 USER_AGENT = 'Kodi Add-on HD-Trailers.net v1.2.5'
 number_of_plots_retrieved = 0
 
@@ -52,8 +48,67 @@ SOURCES = (
 )
 
 
+def __detect_source(url):
+    for source in SOURCES:
+        if source in url:
+            return source
+    raise NotImplementedError(url)
+
+
+def __format_date(date_str):
+    y, m, d = date_str.split('-')
+    return '%s.%s.%s' % (d, m, y)
+
+
+def log(msg):
+    print(u'%s scraper: %s' % (USER_AGENT, msg))
+
+
 class NetworkError(Exception):
     pass
+
+
+def __get_html(url):
+    log('__get_html opening url: %s' % url)
+    headers = {'User-Agent': USER_AGENT}
+    req = urllib2.Request(url, None, headers)
+    try:
+        html = urllib2.urlopen(req).read()
+    except urllib2.HTTPError, error:
+        raise NetworkError('HTTPError: %s' % error)
+    log('__get_html got %d bytes' % len(html))
+    return html
+
+
+def __get_json(url):
+    log('__get_json opening url: %s' % url)
+    headers = {'User-Agent': USER_AGENT}
+    req = urllib2.Request(url, None, headers)
+    try:
+        response = urllib2.urlopen(req).read()
+    except urllib2.HTTPError, error:
+        raise NetworkError('HTTPError: %s' % error)
+    return json.loads(response)
+
+
+def __get_proto(url):
+    URL_PROTO = 'https:'
+    # but https can be broken: let's check it!
+    test = ''
+    try:
+        test = __get_html( URL_PROTO + url )
+    except:
+        pass
+    if ( len(test) == 0 ):
+        URL_PROTO = 'http:'
+    return URL_PROTO
+
+
+URL_PROTO = __get_proto( '//static.hd-trailers.net/images/mobile/next.png' )
+
+MAIN_URL = URL_PROTO + '//www.hd-trailers.net/'
+NEXT_IMG = URL_PROTO + '//static.hd-trailers.net/images/mobile/next.png'
+PREV_IMG = URL_PROTO + '//static.hd-trailers.net/images/mobile/prev.png'
 
 
 def get_latest(page=1):
@@ -184,42 +239,3 @@ def _get_movies(url):
         parseDOM( html, 'a', attrs={'class': 'startLink'} )
     ) is not None
     return movies, has_next_page
-
-
-def __detect_source(url):
-    for source in SOURCES:
-        if source in url:
-            return source
-    raise NotImplementedError(url)
-
-
-def __format_date(date_str):
-    y, m, d = date_str.split('-')
-    return '%s.%s.%s' % (d, m, y)
-
-
-def __get_html(url):
-    log('__get_html opening url: %s' % url)
-    headers = {'User-Agent': USER_AGENT}
-    req = urllib2.Request(url, None, headers)
-    try:
-        html = urllib2.urlopen(req).read()
-    except urllib2.HTTPError, error:
-        raise NetworkError('HTTPError: %s' % error)
-    log('__get_html got %d bytes' % len(html))
-    return html
-
-
-def __get_json(url):
-    log('__get_json opening url: %s' % url)
-    headers = {'User-Agent': USER_AGENT}
-    req = urllib2.Request(url, None, headers)
-    try:
-        response = urllib2.urlopen(req).read()
-    except urllib2.HTTPError, error:
-        raise NetworkError('HTTPError: %s' % error)
-    return json.loads(response)
-
-
-def log(msg):
-    print(u'%s scraper: %s' % (USER_AGENT, msg))

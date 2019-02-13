@@ -1,3 +1,6 @@
+1.2.6 (02.2019)
+- patch for https broken at hd-trailers.net
+
 1.2.5 (01.2019)
 - patch for Kodi 18
 - trying to speed up by using parseDOM instead of BeautifulSoup when possible
